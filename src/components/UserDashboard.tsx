@@ -1,20 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Borrow, Equipment } from '../lib/supabase';
-import { formatRelative, formatDate } from '../lib/utils';
 import FirmwareStatus from './FirmwareStatus';
 import Toast from './Toast';
 
 type ToastItem = { id: number; message: string; type: 'success' | 'error' };
 
 export default function UserDashboard() {
-  const [borrows, setBorrows] = useState<Borrow[]>([]);
   const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([]);
   const [equipmentLoading, setEquipmentLoading] = useState(true);
   const [equipmentError, setEquipmentError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [historyError, setHistoryError] = useState('');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastId = useRef(0);
   const toastTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
@@ -56,30 +52,12 @@ export default function UserDashboard() {
     setEquipmentLoading(false);
   }, []);
 
-  const fetchBorrows = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('borrows')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      setHistoryError(`Failed to load borrow history: ${error.message}`);
-    } else {
-      setBorrows(data as Borrow[]);
-      setHistoryError('');
-    }
-    setLoading(false);
-  }, []);
-
   useEffect(() => {
-    fetchBorrows();
     fetchAvailableEquipment();
 
     const channel = supabase
       .channel('borrows-user')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'borrows' }, (payload) => {
-        fetchBorrows();
         if (payload.eventType === 'UPDATE') {
           const borrow = payload.new as Borrow;
           const previous = payload.old as Partial<Borrow>;
@@ -101,7 +79,7 @@ export default function UserDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchAvailableEquipment, fetchBorrows, showToast]);
+  }, [fetchAvailableEquipment, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,7 +135,6 @@ export default function UserDashboard() {
     setReturnDate('');
     showToast('Borrow request submitted.');
     setSubmitting(false);
-    fetchBorrows();
   };
 
   return (
@@ -293,59 +270,6 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        <div className="panel" style={{ marginTop: '24px' }}>
-          <div className="panel-header">
-            <div className="panel-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18, color: 'var(--text-secondary)' }}>
-                <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />
-              </svg>
-              Borrow History
-            </div>
-          </div>
-          <div className="panel-body">
-            {historyError && <div className="auth-error" style={{ marginBottom: '16px' }}>{historyError}</div>}
-            {loading ? (
-              <div className="loading-bar" />
-            ) : borrows.length === 0 ? (
-              <div className="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <h3>No borrows yet</h3>
-                <p>Submit a borrow request using the form above</p>
-              </div>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>RFID UID</th>
-                      <th>Return Date</th>
-                      <th>Status</th>
-                      <th>Requested</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {borrows.map((b) => (
-                      <tr key={b.id}>
-                        <td style={{ fontWeight: 500 }}>{b.item_name}</td>
-                        <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{b.rfid_uid}</td>
-                        <td>{formatDate(b.return_date)}</td>
-                        <td>
-                          <span className={`borrow-status borrow-status-${b.status}`}>
-                            {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-                          </span>
-                        </td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{formatRelative(b.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
       </main>
     </div>
   );
