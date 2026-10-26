@@ -631,7 +631,7 @@ function BorrowsTab({
                   scanTime >= new Date(b.created_at).getTime();
                 return (
                   <tr key={b.id}>
-                    <td style={{ fontWeight: 500 }}>
+                    <td data-label="Borrower" style={{ fontWeight: 500 }}>
                       <div>{b.full_name || 'Anonymous'}</div>
                       {b.student_number && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -639,10 +639,10 @@ function BorrowsTab({
                         </div>
                       )}
                     </td>
-                    <td>{b.item_name}</td>
-                    <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{b.rfid_uid}</td>
-                    <td>{formatDate(b.return_date)}</td>
-                    <td>
+                    <td data-label="Item">{b.item_name}</td>
+                    <td data-label="RFID UID" className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{b.rfid_uid}</td>
+                    <td data-label="Return Date">{formatDate(b.return_date)}</td>
+                    <td data-label="Status">
                       <span className={`borrow-status ${returnAwaitingReview ? 'borrow-status-return-pending' : `borrow-status-${b.status}`}`}>
                         {returnAwaitingReview
                           ? 'Return Awaiting Review'
@@ -651,8 +651,8 @@ function BorrowsTab({
                             : b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{formatRelative(b.created_at)}</td>
-                    <td>
+                    <td data-label="Requested" style={{ color: 'var(--text-secondary)' }}>{formatRelative(b.created_at)}</td>
+                    <td data-label="Actions">
                       <div style={{ display: 'flex', gap: '6px' }}>
                         {b.status === 'pending' && (
                           <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
@@ -794,16 +794,16 @@ function HistoryTab({ scans }: { scans: ScanLogWithRelations[] }) {
         <tbody>
           {scans.map((s) => (
             <tr key={s.id}>
-              <td style={{ fontWeight: 500 }}>{s.equipment?.name ?? '—'}</td>
-              <td className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{s.rfid_uid}</td>
-              <td>
+              <td data-label="Equipment" style={{ fontWeight: 500 }}>{s.equipment?.name ?? '—'}</td>
+              <td data-label="Tag UID" className="mono" style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{s.rfid_uid}</td>
+              <td data-label="Action">
                 <span className="action-badge" style={{ background: ACTION_META[s.action].color + '1a', color: ACTION_META[s.action].color }}>
                   {ACTION_META[s.action].label}
                 </span>
               </td>
-              <td>{s.devices?.device_name ?? '—'}</td>
-              <td style={{ color: 'var(--text-secondary)' }}>{formatDateTime(s.device_timestamp)}</td>
-              <td style={{ color: 'var(--text-secondary)' }}>{formatDateTime(s.created_at)}</td>
+              <td data-label="Device">{s.devices?.device_name ?? '—'}</td>
+              <td data-label="Device Time" style={{ color: 'var(--text-secondary)' }}>{formatDateTime(s.device_timestamp)}</td>
+              <td data-label="Logged At" style={{ color: 'var(--text-secondary)' }}>{formatDateTime(s.created_at)}</td>
             </tr>
           ))}
         </tbody>
